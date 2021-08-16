@@ -17,10 +17,11 @@ img {
     cursor: pointer;
 }
 li {
+    font-size: 18px;
     text-align: left;
     color: white;
 }
-footer{
+footer h3{
     font-size: 30px;
     text-align: right;
     background-color: orange;
