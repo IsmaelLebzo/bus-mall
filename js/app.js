@@ -33,22 +33,39 @@ for (let i = 0; i < storeItems.length; i++) {
     new Storeitem(storeItems[i]);
 }
 
+function sToLocalStorage(){
+    let data = JSON.stringify(product);
+    localStorage.setItem('Items' , data);
+}
+function rFromLocalStorage(){
+    let stringObj = localStorage.getItem('Items');
+    let normalObj = JSON.parse(stringObj);
+
+    if(normalObj){
+        product = normalObj;
+    }
+}
+rFromLocalStorage();
 function randomImg() {
     return Math.floor(Math.random() * product.length);
 }
 let leftIndex;
 let centerIndex;
 let rightIndex;
+let lastImg = [];
 function renderImg() {
     leftIndex = randomImg();
     centerIndex = randomImg();
     rightIndex = randomImg();
-    while (leftIndex === rightIndex || leftIndex == centerIndex) {
+    while (leftIndex === rightIndex || rightIndex === centerIndex || centerIndex === leftIndex || lastImg.includes(leftIndex) || lastImg.includes(centerIndex) || lastImg.includes(rightIndex)) {
         leftIndex = randomImg();
-    }
-    while (rightIndex === centerIndex) {
+        centerIndex = randomImg();
         rightIndex = randomImg();
     }
+    lastImg[0] = leftIndex;
+    lastImg[1] = centerIndex;
+    lastImg[2] = rightIndex;
+
     leftImg.setAttribute('src', product[leftIndex].sItem);
     centerImg.setAttribute('src', product[centerIndex].sItem);
     rightImg.setAttribute('src', product[rightIndex].sItem);
@@ -56,85 +73,87 @@ function renderImg() {
     product[centerIndex].view++;
     product[rightIndex].view++;
 }
-renderImg();
+    renderImg();
 
-leftImg.addEventListener('click', clickHandler);
-centerImg.addEventListener('click', clickHandler);
-rightImg.addEventListener('click', clickHandler);
+    leftImg.addEventListener('click', clickHandler);
+    centerImg.addEventListener('click', clickHandler);
+    rightImg.addEventListener('click', clickHandler);
 
-function clickHandler(event) {
-    if (attempt < maxAttempt) {
-        let clickedImg = event.target.id;
-        if (clickedImg === 'leftImg') {
-            product[leftIndex].vote++;
+    function clickHandler(event) {
+        if (attempt < maxAttempt) {
+            let clickedImg = event.target.id;
+            if (clickedImg === 'leftImg') {
+                product[leftIndex].vote++;
+            }
+            else if (clickedImg === 'centerImg') {
+                product[centerIndex].vote++;
+            }
+            else if (clickedImg === 'rightImg') {
+                product[rightIndex].vote++
+            }
+            chance.textContent = `Chance ${attempt + 1}`
+            renderImg();
+            attempt++;
+            sToLocalStorage();
         }
-        else if (clickedImg === 'centerImg') {
-            product[centerIndex].vote++;
+        else {
+            resultButton = document.createElement('button');
+            resultButton.textContent = 'View Result';
+            resultButton.addEventListener('click', renderResualt);
+            buttonContainer.appendChild(resultButton);
+            leftImg.removeEventListener('click', clickHandler);
+            centerImg.removeEventListener('click', clickHandler);
+            rightImg.removeEventListener('click', clickHandler);
         }
-        else if (clickedImg === 'rightImg') {
-            product[rightIndex].vote++
-        }
-        chance.textContent = `Chance ${attempt + 1}`
-        renderImg();
-        attempt++;
     }
-    else {
-        resultButton = document.createElement('button');
-        resultButton.textContent = 'View Result';
-        resultButton.addEventListener('click', renderResualt);
-        buttonContainer.appendChild(resultButton);
-        leftImg.removeEventListener('click', clickHandler);
-        centerImg.removeEventListener('click', clickHandler);
-        rightImg.removeEventListener('click', clickHandler);
-    }
-}
 
-function renderResualt() {
-    for (let i = 0; i < product.length; i++) {
-        let liEl = document.createElement('li');
-        result.appendChild(liEl);
-        liEl.textContent = `${product[i].itemName} has ${product[i].vote} votes, and appeared ${product[i].view} times.`;
-        vote.push(product[i].vote);
-        view.push(product[i].view);
-        resultButton.remove();
+    function renderResualt() {
+        for (let i = 0; i < product.length; i++) {
+            let liEl = document.createElement('li');
+            result.appendChild(liEl);
+            liEl.textContent = `${product[i].itemName} has ${product[i].vote} votes, and appeared ${product[i].view} times.`;
+            vote.push(product[i].vote);
+            view.push(product[i].view);
+            resultButton.remove();
+        }
+        chartRender();
     }
-    chartRender();
-}
-function chartRender() {
-    let ctx = document.getElementById('myChart').getContext('2d');
-    let myChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: itemNames,
-            datasets: [{
-                label: '# of Votes',
-                data: vote,
-                backgroundColor: [
-                    'rgba(255, 99, 132, 0.2)'
-                ],
-                borderColor: [
-                    'rgba(255, 99, 132, 1)'
-                ],
-                borderWidth: 1
+    function chartRender() {
+        let ctx = document.getElementById('myChart').getContext('2d');
+        let myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: itemNames,
+                datasets: [{
+                    label: '# of Votes',
+                    data: vote,
+                    backgroundColor: [
+                        'rgba(255, 99, 132, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(255, 99, 132, 1)'
+                    ],
+                    borderWidth: 1
+                },
+                {
+                    label: '# of Views',
+                    data: view,
+                    backgroundColor: [
+                        'rgba(255, 206, 86, 0.2)'
+                    ],
+                    borderColor: [
+                        'rgba(153, 102, 255, 1)'
+                    ],
+                    borderWidth: 1
+                }]
             },
-            {
-                label: '# of Views',
-                data: view,
-                backgroundColor: [
-                    'rgba(255, 206, 86, 0.2)'
-                ],
-                borderColor: [
-                    'rgba(153, 102, 255, 1)'
-                ],
-                borderWidth: 1
-            }]
-        },
-        options: {
-            scales: {
-                y: {
-                    beginAtZero: true
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
                 }
             }
-        }
-    });
-}
+        });
+    }
+
